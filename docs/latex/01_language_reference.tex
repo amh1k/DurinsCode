@@ -1,0 +1,451 @@
+\documentclass[12pt, a4paper]{article}
+\input{preamble}
+
+\begin{document}
+
+% ════════════════════════════════════════════════════════════════
+%  TITLE PAGE
+% ════════════════════════════════════════════════════════════════
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\color{durins-blue}\rule{\linewidth}{2pt}}\\[1em]
+  {\Huge\bfseries\color{durins-blue} Durin's Code}\\[0.5em]
+  {\LARGE\color{durins-gold} Language Reference Manual}\\[1em]
+  {\color{durins-blue}\rule{\linewidth}{2pt}}\\[2em]
+
+  {\large CS4031 --- Compiler Construction \\ Spring 2026}\\[3em]
+
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Student Name} & \textbf{Student ID} \\
+    \midrule
+    Huzaifa Abdul Rehman  & 23K-0782 \\
+    Abdul Moiz Hussain    & 23K-0553 \\
+    Muhammad Abdullah Khan & 23K-0607 \\
+    \bottomrule
+  \end{tabular}
+
+  \vfill
+  {\small\color{durins-gray} Document version 1.0 \quad|\quad \today}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ════════════════════════════════════════════════════════════════
+
+Durin's Code (file extension \texttt{.dc}) is a domain-specific language designed for
+authoring interactive text-adventure games in the spirit of the 8-bit era.
+A \texttt{.dc} program declares a \emph{world} --- a directed graph of rooms populated with
+items and NPCs --- and a set of \emph{actions}, which are named event handlers triggered by
+player input at runtime.
+
+The compiler performs full static validation of the world graph, generates optimised
+Three-Address Code (TAC) as an intermediate representation, serialises the result to
+JSON bytecode, and executes it inside a terminal-based Virtual Machine.
+
+\begin{infobox}
+\textbf{Design philosophy.}
+Durin's Code removes the need for imperative low-level coding when building text
+adventures. Every game element (rooms, items, NPCs, transitions) is expressed
+declaratively. All cross-references are validated at compile time, preventing
+runtime crashes from missing rooms or invalid items.
+\end{infobox}
+
+% ════════════════════════════════════════════════════════════════
+\section{Lexical Structure}
+% ════════════════════════════════════════════════════════════════
+
+\subsection{Source Encoding}
+Source files are plain text encoded in UTF-8.
+Both Unix (\texttt{\textbackslash n}) and Windows (\texttt{\textbackslash r\textbackslash n})
+line endings are accepted; the lexer normalises them to a single newline internally.
+
+\subsection{Comments}
+Only single-line comments are supported. A comment begins with \texttt{//} and
+extends to the end of the current line.
+
+\begin{lstlisting}[style=dc, caption={Comment syntax}]
+// This is a comment. It is ignored by the compiler.
+room "start" {   // inline comments are also allowed
+    description "A quiet room."
+}
+\end{lstlisting}
+
+\subsection{Identifiers}
+
+\[
+  \textit{identifier} \;\;::=\;\; [\_\,\text{a-zA-Z}]\;[\_\,\text{a-zA-Z0-9}]^*
+\]
+
+Identifiers are case-sensitive. A leading underscore is permitted. Examples:
+\texttt{the\_ring}, \texttt{\_private}, \texttt{room1}, \texttt{hasItem}.
+
+\subsection{Keywords}
+
+The following identifiers are reserved and may not be used as user-defined names:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\texttt{room} & \texttt{action} & \texttt{item} & \texttt{npc} \\
+\texttt{exit} & \texttt{if} & \texttt{else} & \texttt{print} \\
+\texttt{remove} & \texttt{player} & \texttt{true} & \texttt{false} \\
+\texttt{description} & \texttt{current\_room} & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Literals}
+
+\paragraph{String literals.}
+A string is enclosed in double-quotes on a single line.
+\[
+  \textit{STRING} \;\;::=\;\; \texttt{"} \; [^\texttt{"\textbackslash n}]^* \; \texttt{"}
+\]
+
+\paragraph{Integer literals.}
+A sequence of decimal digits. Floating-point numbers are \textbf{not} supported and
+produce a compile-time error.
+\[
+  \textit{NUMBER} \;\;::=\;\; [0\text{-}9]^+
+\]
+
+\paragraph{Boolean literals.} \texttt{true} and \texttt{false}.
+
+\subsection{Operators and Punctuation}
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Usage} \\
+\midrule
+\texttt{\{} \texttt{\}} & Braces & Block delimiters \\
+\texttt{(} \texttt{)} & Parentheses & Function-call arguments \\
+\texttt{,} & Comma & Property separator \\
+\texttt{:} & Colon & Property value separator \\
+\texttt{;} & Semicolon & Optional statement terminator \\
+\texttt{.} & Dot & Attribute access (\texttt{player.inventory}) \\
+\texttt{=} & Assign & Simple assignment \\
+\texttt{==} & Equal & Equality test \\
+\texttt{+=} & Plus-assign & Add to attribute / add item to inventory \\
+\texttt{-=} & Minus-assign & Subtract from attribute / remove from inventory \\
+\texttt{+} \texttt{-} & Arithmetic & Integer arithmetic \\
+\texttt{>} \texttt{>=} \texttt{<} \texttt{<=} & Relational & Numeric comparisons \\
+\texttt{\&\&} & Logical AND & Both conditions must hold \\
+\texttt{||} & Logical OR & Either condition must hold \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Context-Sensitive Dot Tokens}
+
+After a \texttt{.} the lexer inspects the immediately preceding token to disambiguate
+attribute access:
+
+\begin{itemize}
+  \item \texttt{player.}\textit{attr} $\Rightarrow$ next identifier emitted as \texttt{TOKEN\_PLAYER\_ATTR}
+  \item \textit{room\_id}\texttt{.}\textit{attr} $\Rightarrow$ next identifier emitted as \texttt{TOKEN\_ROOM\_ATTR}
+\end{itemize}
+
+This allows the parser to differentiate \texttt{player.has\_item(\ldots)} from
+\texttt{room.description} without extra lookahead.
+
+% ════════════════════════════════════════════════════════════════
+\section{Grammar (EBNF)}
+% ════════════════════════════════════════════════════════════════
+
+The complete context-free grammar of Durin's Code in Extended Backus-Naur Form:
+
+\begin{lstlisting}[language={}, basicstyle=\ttfamily\small, frame=single,
+    backgroundcolor=\color{code-bg}, caption={Complete EBNF Grammar}]
+program         ::=  declaration* EOF
+
+declaration     ::=  room_decl | action_decl
+
+(* World *)
+room_decl       ::=  "room" STRING "{" room_body* "}"
+room_body       ::=  description_stmt
+                   | item_decl
+                   | npc_decl
+                   | exit_decl
+
+description_stmt ::= "description" STRING
+
+item_decl       ::=  "item" IDENTIFIER "{" prop_list "}"
+npc_decl        ::=  "npc"  IDENTIFIER "{" prop_list "}"
+prop_list       ::=  prop ("," prop)*
+prop            ::=  IDENTIFIER ":" (NUMBER | STRING | BOOLEAN)
+
+exit_decl       ::=  "exit" IDENTIFIER STRING
+                (*          ^direction  ^target_room_id *)
+
+(* Actions *)
+action_decl     ::=  "action" STRING "{" statement* "}"
+
+statement       ::=  print_stmt
+                   | remove_stmt
+                   | assign_stmt
+                   | if_stmt
+
+print_stmt      ::=  "print" STRING
+remove_stmt     ::=  "remove" IDENTIFIER
+assign_stmt     ::=  player_attr_ref ("=" | "+=" | "-=")
+                     (IDENTIFIER | NUMBER | STRING | BOOLEAN)
+player_attr_ref ::=  "player" "." IDENTIFIER
+
+if_stmt         ::=  "if" condition "{" statement* "}"
+                     ( "else" "{" statement* "}" )?
+
+(* Conditions *)
+condition       ::=  simple_cond ( ("&&" | "||") simple_cond )*
+simple_cond     ::=  room_check | has_item_check | comparison
+
+room_check      ::=  "current_room" "==" STRING
+has_item_check  ::=  "player" "." "has_item" "(" IDENTIFIER ")"
+comparison      ::=  player_attr_ref
+                     ("==" | ">" | ">=" | "<" | "<=")
+                     (NUMBER | STRING | BOOLEAN)
+
+(* Terminals *)
+STRING          ::=  '"' [^"\n]* '"'
+NUMBER          ::=  [0-9]+
+BOOLEAN         ::=  "true" | "false"
+IDENTIFIER      ::=  [_a-zA-Z] [_a-zA-Z0-9]*
+\end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════
+\section{Declarations}
+% ════════════════════════════════════════════════════════════════
+
+\subsection{Room Declaration}
+
+A room declaration defines one node in the world graph.
+
+\begin{lstlisting}[style=dc, caption={Room declaration syntax}]
+room "bag_end" {
+    description "The cozy hole of a Hobbit. A golden ring glints on the table."
+    item the_ring { power: 100, type: "artifact" }
+    npc gandalf   { health: 500, hostile: false }
+    exit east  "buckland"
+    exit north "shire"
+}
+\end{lstlisting}
+
+\begin{itemize}
+  \item \textbf{\texttt{description}} — Sets the text printed by the \texttt{look} command.
+        Exactly one description per room.
+  \item \textbf{\texttt{item}} — Places a named item in this room with a property map.
+        The item is globally registered and may be referenced in any action.
+  \item \textbf{\texttt{npc}} — Places a named NPC in the room with a property map.
+  \item \textbf{\texttt{exit}} — Declares a directed edge; direction is a free identifier
+        (\texttt{north}, \texttt{east}, or any word).
+\end{itemize}
+
+\paragraph{Semantic constraints.}
+\begin{enumerate}
+  \item Room identifiers (the string name) must be unique across the program.
+  \item Exit target strings must reference a declared room.
+  \item No two exits in the same room may share the same direction identifier.
+\end{enumerate}
+
+\subsection{Action Declaration}
+
+An action is a named event handler triggered by matching player input.
+
+\begin{lstlisting}[style=dc, caption={Action declaration syntax}]
+action "take ring" {
+    if current_room == "bag_end" {
+        player.inventory += the_ring
+        print "The Precious is yours."
+    }
+}
+\end{lstlisting}
+
+Action names are strings and may contain spaces. At runtime the player types the action
+name verbatim (case-sensitive).
+
+% ════════════════════════════════════════════════════════════════
+\section{Statements}
+% ════════════════════════════════════════════════════════════════
+
+\subsection{\texttt{print}}
+Writes a string literal to standard output.
+\begin{lstlisting}[style=dc, numbers=none]
+print "You cannot do that here."
+\end{lstlisting}
+
+\subsection{\texttt{remove}}
+Removes a named item from the game world and from the player's inventory if present.
+\begin{lstlisting}[style=dc, numbers=none]
+remove the_ring
+\end{lstlisting}
+\textbf{Semantic constraint:} the identifier must name a declared item.
+
+\subsection{Assignment}
+Sets or modifies a player attribute.
+
+\begin{lstlisting}[style=dc, numbers=none, caption={Assignment variants}]
+player.win       = true          // boolean assignment
+player.health    = 100           // integer assignment
+player.name      = "Bilbo"       // string assignment
+player.inventory += the_ring     // add item to inventory
+player.health    -= 10           // subtract from integer attribute
+\end{lstlisting}
+
+\subsection{\texttt{if} / \texttt{else}}
+Conditional execution. The \texttt{else} branch is optional.
+
+\begin{lstlisting}[style=dc, caption={Conditional statement}]
+if current_room == "mount_doom" && player.has_item(the_ring) {
+    remove the_ring
+    player.win = true
+    print "Middle-earth is saved!"
+} else {
+    print "You cannot do that here."
+}
+\end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════
+\section{Conditions}
+% ════════════════════════════════════════════════════════════════
+
+\begin{center}
+\begin{tabular}{p{5.5cm} p{7cm}}
+\toprule
+\textbf{Form} & \textbf{Meaning} \\
+\midrule
+\texttt{current\_room == "id"} & Player is in room \texttt{"id"} \\
+\texttt{player.has\_item(name)} & Player's inventory contains \texttt{name} \\
+\texttt{player.attr == value} & Attribute equality \\
+\texttt{player.attr > value} & Greater-than comparison \\
+\texttt{player.attr >= value} & Greater-or-equal \\
+\texttt{player.attr < value} & Less-than comparison \\
+\texttt{player.attr <= value} & Less-or-equal \\
+\texttt{cond1 \&\& cond2} & Logical AND \\
+\texttt{cond1 || cond2} & Logical OR \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+\section{Type System}
+% ════════════════════════════════════════════════════════════════
+
+Property values in \texttt{item} and \texttt{npc} blocks must be one of three scalar types:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Type} & \textbf{Example} & \textbf{Storage} \\
+\midrule
+Integer & \texttt{100} & 32-bit signed \\
+String & \texttt{"artifact"} & \texttt{std::string} \\
+Boolean & \texttt{true} / \texttt{false} & \texttt{bool} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Player attributes are dynamically typed: the first assignment determines the type.
+Floating-point numbers are rejected at lex time.
+
+% ════════════════════════════════════════════════════════════════
+\section{Scope Rules}
+% ════════════════════════════════════════════════════════════════
+
+\begin{itemize}
+  \item All room, item, NPC, and action names share a single flat global namespace.
+  \item Duplicate names within the same category are a semantic error.
+  \item Items declared inside any room are globally visible in all actions.
+  \item \texttt{player} is a built-in identifier; \texttt{player.X} accesses runtime state.
+  \item There is no block-level scoping — no local variables exist in actions.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════
+\section{Error Catalogue}
+% ════════════════════════════════════════════════════════════════
+
+\subsection{Lexer Errors}
+
+\begin{center}
+\begin{tabular}{p{5cm} p{8cm}}
+\toprule
+\textbf{Message} & \textbf{Cause} \\
+\midrule
+\texttt{Unexpected character} & A character outside the language alphabet (e.g.\ \texttt{@}) \\
+\texttt{Unterminated string.} & A \texttt{"} opened but not closed before end-of-line \\
+\texttt{Floating-point numbers are not supported.} & A digit sequence containing \texttt{.} \\
+\texttt{Expected '\&\&'} & Single \texttt{\&} not followed by \texttt{\&} \\
+\texttt{Expected '||'} & Single \texttt{|} not followed by \texttt{|} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Semantic Errors}
+
+\begin{center}
+\begin{tabular}{p{5.5cm} p{7.5cm}}
+\toprule
+\textbf{Error} & \textbf{Cause} \\
+\midrule
+Duplicate room & Two rooms share the same name \\
+Duplicate item & Two items share the same name \\
+Duplicate action & Two actions share the same name \\
+Exit target not declared & An exit points to a non-existent room \\
+Duplicate exit direction & A direction is used twice in the same room \\
+\texttt{remove}: unknown item & Removal of an undeclared item \\
+\texttt{has\_item}: unknown item & Inventory check against an undeclared item \\
+\texttt{current\_room}: unknown room & Room comparison against an undeclared room \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ════════════════════════════════════════════════════════════════
+\section{Complete Example Program}
+% ════════════════════════════════════════════════════════════════
+
+\begin{lstlisting}[style=dc, caption={Middle-Earth Adventure --- full demo program}]
+// Middle-earth adventure
+
+room "bag_end" {
+    description "The cozy hole of a Hobbit. A golden ring glints on the table."
+    item the_ring { power: 100, type: "artifact" }
+    exit east "buckland"
+}
+
+room "buckland" {
+    description "A quiet riverside village. The old ferry creaks at the dock."
+    exit west "bag_end"
+    exit east "mount_doom"
+}
+
+room "mount_doom" {
+    description "The air is thick with ash. The fiery Cracks of Doom loom ahead."
+    npc sauron { health: 999, hostile: true }
+    exit west "buckland"
+}
+
+action "take ring" {
+    if current_room == "bag_end" {
+        player.inventory += the_ring
+        print "The Precious is yours."
+    } else {
+        print "There is nothing of value here."
+    }
+}
+
+action "destroy ring" {
+    if current_room == "mount_doom" && player.has_item(the_ring) {
+        remove the_ring
+        print "The ring is consumed by fire! Middle-earth is saved."
+        player.win = true
+    } else {
+        print "You cannot do that here."
+    }
+}
+\end{lstlisting}
+
+\end{document}

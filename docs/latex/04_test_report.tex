@@ -1,0 +1,420 @@
+\documentclass[12pt, a4paper]{article}
+\input{preamble}
+
+\begin{document}
+
+% ════════════════════════════════════════════════════════════════
+%  TITLE PAGE
+% ════════════════════════════════════════════════════════════════
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\color{durins-blue}\rule{\linewidth}{2pt}}\\[1em]
+  {\Huge\bfseries\color{durins-blue} Durin's Code}\\[0.5em]
+  {\LARGE\color{durins-gold} Test Report}\\[1em]
+  {\color{durins-blue}\rule{\linewidth}{2pt}}\\[2em]
+
+  {\large CS4031 --- Compiler Construction \\ Spring 2026}\\[3em]
+
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Student Name} & \textbf{Student ID} \\
+    \midrule
+    Huzaifa Abdul Rehman   & 23K-0782 \\
+    Abdul Moiz Hussain     & 23K-0553 \\
+    Muhammad Abdullah Khan & 23K-0607 \\
+    \bottomrule
+  \end{tabular}
+
+  \vfill
+  {\small\color{durins-gray} Document version 1.0 \quad|\quad \today}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════
+\section{Test Summary}
+% ════════════════════════════════════════════════════════════════
+
+All 49 tests pass with zero failures.
+Total execution time: $<0.2$ seconds.
+
+\begin{center}
+\begin{tabular}{llrr}
+\toprule
+\textbf{Suite} & \textbf{Binary} & \textbf{Tests} & \textbf{Status} \\
+\midrule
+Lexer    & \texttt{lexer\_tests}    & 12 & \textcolor{code-cmt}{\textbf{PASS}} \\
+Parser   & \texttt{parser\_tests}   & 15 & \textcolor{code-cmt}{\textbf{PASS}} \\
+Semantic & \texttt{semantic\_tests} & 10 & \textcolor{code-cmt}{\textbf{PASS}} \\
+TAC      & \texttt{tac\_tests}      &  4 & \textcolor{code-cmt}{\textbf{PASS}} \\
+Codegen  & \texttt{codegen\_tests}  &  3 & \textcolor{code-cmt}{\textbf{PASS}} \\
+VM       & \texttt{vm\_tests}       &  5 & \textcolor{code-cmt}{\textbf{PASS}} \\
+\midrule
+\textbf{Total} & & \textbf{49} & \textcolor{code-cmt}{\textbf{49 / 49}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}[style=bash, caption={ctest output (abbreviated)}]
+$ cd build && ctest --output-on-failure
+Test project .../DurinsCode-main/build
+  1/49 LexerTest.TokenizesSampleWorldScript       Passed  0.00s
+  2/49 LexerTest.RecognizesKeywordsAndPunctuation Passed  0.00s
+  ...
+ 49/49 VMTest.ConditionalSkippedWhenRoomWrong     Passed  0.00s
+
+100% tests passed, 0 tests failed out of 49
+Total Test time (real) = 0.13 sec
+\end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════
+\section{Lexer Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{TokenizesSampleWorldScript} &
+  Full world script tokenises correctly end-to-end; checks first 15 tokens including
+  \texttt{room}, string, \texttt{\{}, \texttt{description}, \texttt{item}, identifier,
+  number, comma, and colon. \\[4pt]
+
+\texttt{RecognizesKeywordsAndPunctuation} &
+  All 14 keywords (\texttt{room} through \texttt{current\_room}) plus all punctuation
+  tokens are emitted with the correct \texttt{TokenType}. \\[4pt]
+
+\texttt{RecognizesStringAndNumber} &
+  A string literal including spaces and a multi-digit integer are tokenised with the
+  correct type and lexeme text. \\[4pt]
+
+\texttt{RecognizesCurrentRoomCondition} &
+  The sequence \texttt{if current\_room == "bag\_end" \{} produces
+  \texttt{TOKEN\_IF}, \texttt{TOKEN\_CURRENT\_ROOM}, \texttt{TOKEN\_EQUAL\_EQUAL},
+  \texttt{TOKEN\_STRING}, \texttt{TOKEN\_LEFT\_BRACE} in order. \\[4pt]
+
+\texttt{RecognizesPlayerHasItemAsContextSensitiveAttribute} &
+  After \texttt{player.}, the identifier \texttt{has\_item} is emitted as
+  \texttt{TOKEN\_PLAYER\_ATTR} (not \texttt{TOKEN\_IDENTIFIER}), confirming the
+  context-sensitive dot logic. \\[4pt]
+
+\texttt{RecognizesPlayerAttributeAndPlusEqual} &
+  \texttt{player.inventory += the\_ring} produces
+  \texttt{TOKEN\_PLAYER}, \texttt{TOKEN\_DOT}, \texttt{TOKEN\_PLAYER\_ATTR},
+  \texttt{TOKEN\_PLUS\_EQUAL}, \texttt{TOKEN\_IDENTIFIER}. \\[4pt]
+
+\texttt{ReportsUnexpectedCharacter} &
+  The character \texttt{@} produces a \texttt{TOKEN\_ERROR} whose message contains
+  ``Unexpected character''. \\[4pt]
+
+\texttt{AcceptsUnderscoreLeadingIdentifiers} &
+  \texttt{\_private}, \texttt{\_\_magic}, and \texttt{\_123} are tokenised as
+  \texttt{TOKEN\_IDENTIFIER}.
+  Also validates that column numbers are tracked correctly
+  (\texttt{\_private} at column 1, \texttt{\_\_magic} at column 10). \\[4pt]
+
+\texttt{RejectsFloatingPointNumbers} &
+  \texttt{3.14} produces \texttt{TOKEN\_ERROR} with a message containing
+  ``Floating-point''. \\[4pt]
+
+\texttt{RecognizesLogicalOrOperator} &
+  \texttt{||} produces \texttt{TOKEN\_OR\_OR}. \\[4pt]
+
+\texttt{ReportsColumnNumbers} &
+  In the source \texttt{"room\textbackslash n  @\textbackslash naction"}, the
+  \texttt{@} error token is reported at line 2, column 3. \\[4pt]
+
+\texttt{HandlesWindowsLineEndings} &
+  \texttt{"room\textbackslash r\textbackslash n"test"} tokenises \texttt{room} on
+  line 1 and the string on line 2, confirming \texttt{\textbackslash r\textbackslash n}
+  is treated as a single newline. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{Parser Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{ParsesFullWorldScript} &
+  The canonical two-room, two-action world from the proposal parses without error
+  and produces the correct top-level declaration count. \\[4pt]
+
+\texttt{ParsesSingleRoomDeclaration} &
+  A room with a description, one item, one exit parses into a
+  \texttt{RoomDeclNode} with the correct field values. \\[4pt]
+
+\texttt{ParsesItemProperties} &
+  Item properties of integer, string, and boolean types are parsed into the
+  correct \texttt{PropValue} variants. \\[4pt]
+
+\texttt{ParsesNpcDeclaration} &
+  An NPC declaration with \texttt{health} and \texttt{hostile} properties
+  parses correctly. \\[4pt]
+
+\texttt{ParsesExitDeclaration} &
+  \texttt{exit east "buckland"} produces direction \texttt{"east"} and target
+  \texttt{"buckland"} in the \texttt{ExitDeclNode}. \\[4pt]
+
+\texttt{ParsesCurrentRoomCondition} &
+  \texttt{if current\_room == "bag\_end" \{...\}} produces an
+  \texttt{IfStmtNode} with a \texttt{ROOM\_CHECK} condition node. \\[4pt]
+
+\texttt{ParsesPlayerAssignment} &
+  \texttt{player.win = true} produces an \texttt{AssignStmtNode} with the correct
+  target, operator, and value. \\[4pt]
+
+\texttt{ParsesPlayerPlusAssign} &
+  \texttt{player.inventory += the\_ring} produces an \texttt{AssignStmtNode}
+  with \texttt{op = PLUS\_EQUAL}. \\[4pt]
+
+\texttt{ParsesPlayerMinusAssign} &
+  \texttt{player.health -= 10} produces an \texttt{AssignStmtNode}
+  with \texttt{op = MINUS\_EQUAL} and \texttt{intValue = 10}. \\[4pt]
+
+\texttt{ParsesLogicalOrInCondition} &
+  A condition joined by \texttt{||} produces a \texttt{ConditionNode} with
+  \texttt{type = OR}. \\[4pt]
+
+\texttt{FailsOnMissingRoomBrace} &
+  A room body without a closing \texttt{\}} causes \texttt{hadError = true}. \\[4pt]
+
+\texttt{ReportsErrorOnFloatLiteral} &
+  A floating-point literal in a property value causes \texttt{hadError = true}. \\[4pt]
+
+\texttt{AcceptsUnderscoreIdentifiers} &
+  Room and item names starting with underscores parse without error. \\[4pt]
+
+\texttt{EmptyActionBodyIsValid} &
+  An action with an empty body \texttt{action "noop" \{\}} parses without error. \\[4pt]
+
+\texttt{RoomWithNoBodyElementsIsValid} &
+  A room with no items, NPCs, or exits parses without error. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{Semantic Analyser Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{RegistersRoomsAndItems} &
+  A valid program populates \texttt{SymbolTable.rooms} and
+  \texttt{SymbolTable.items} with the correct names. \\[4pt]
+
+\texttt{ErrorOnDuplicateRoom} &
+  Two rooms with the same name produce \texttt{hadError = true} and a diagnostic
+  message containing ``Duplicate room''. \\[4pt]
+
+\texttt{ErrorOnDuplicateAction} &
+  Two actions with the same name produce \texttt{hadError = true}. \\[4pt]
+
+\texttt{ErrorOnExitToUndeclaredRoom} &
+  An exit whose target string does not match any declared room produces
+  \texttt{hadError = true}. \\[4pt]
+
+\texttt{ErrorOnDuplicateExitDirection} &
+  Two exits in the same room sharing a direction produce \texttt{hadError = true}. \\[4pt]
+
+\texttt{ErrorOnRemoveUndeclaredItem} &
+  \texttt{remove phantom} where \texttt{phantom} is undeclared produces
+  \texttt{hadError = true}. \\[4pt]
+
+\texttt{ErrorOnHasItemUndeclaredItem} &
+  \texttt{player.has\_item(phantom)} where \texttt{phantom} is undeclared produces
+  \texttt{hadError = true}. \\[4pt]
+
+\texttt{ErrorOnCurrentRoomUndeclaredTarget} &
+  \texttt{current\_room == "ghost\_room"} where \texttt{"ghost\_room"} is not declared
+  produces \texttt{hadError = true}. \\[4pt]
+
+\texttt{CollectsMultipleErrors} &
+  A program with three separate semantic errors produces three diagnostics in a single
+  analysis pass (collect-all-errors behaviour). \\[4pt]
+
+\texttt{ValidFullProgramPassesClean} &
+  The complete Middle-Earth demo program passes semantic analysis with
+  \texttt{hadError = false} and zero diagnostics. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{TAC Generator Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{PrintStatementEmitsPrintOp} &
+  An action containing \texttt{print "Hello"} generates exactly one instruction
+  with \texttt{op = PRINT} and \texttt{strValue = "Hello"}. \\[4pt]
+
+\texttt{IfConditionEmitsJumpIfFalse} &
+  An action with \texttt{if current\_room == "x" \{\ldots\}} generates a
+  \texttt{CHECK\_ROOM} instruction followed by a \texttt{JUMP\_IF\_FALSE}. \\[4pt]
+
+\texttt{AssignStatementEmitsSetPlayerAttr} &
+  \texttt{player.win = true} generates a \texttt{SET\_PLAYER\_ATTR} instruction
+  with \texttt{dest = "win"}, \texttt{boolValue = true}. \\[4pt]
+
+\texttt{RemoveEmitsRemoveItemOp} &
+  \texttt{remove the\_ring} generates a \texttt{REMOVE\_ITEM} instruction
+  with \texttt{src1 = "the\_ring"}. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{Code Generator Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{ProducesValidJSON} &
+  The output of \texttt{generateBytecode()} is valid JSON (parseable by
+  \texttt{nlohmann::json::parse} without exception). \\[4pt]
+
+\texttt{WorldContainsRooms} &
+  The \texttt{"world"} array in the generated JSON contains an entry for each
+  declared room, with correct \texttt{"id"} and \texttt{"description"} fields. \\[4pt]
+
+\texttt{ActionsContainInstructions} &
+  The \texttt{"actions"} array contains one entry per action declaration, each with
+  a non-empty \texttt{"instructions"} array. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{Virtual Machine Tests}
+% ════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{6.5cm} p{7cm}}
+\toprule
+\textbf{Test Name} & \textbf{What It Verifies} \\
+\midrule
+\endhead
+\texttt{LoadsBytecodeFromString} &
+  \texttt{VM::loadBytecodeFromString()} with a minimal valid JSON string returns
+  \texttt{true} and does not throw. \\[4pt]
+
+\texttt{ExecutesPrintAction} &
+  An action containing a \texttt{PRINT} instruction outputs the expected string
+  to \texttt{stdout} when executed. \\[4pt]
+
+\texttt{ActionNotFoundReturnsFalse} &
+  Requesting an action name that does not exist returns \texttt{false} from
+  \texttt{executeAction()} without crashing. \\[4pt]
+
+\texttt{ConditionalActionAddsToInventory} &
+  An action guarded by \texttt{CHECK\_ROOM} executes its body (and adds an item
+  to inventory via \texttt{SET\_PLAYER\_ATTR} with \texttt{+=}) when the player is
+  in the correct room. \\[4pt]
+
+\texttt{ConditionalSkippedWhenRoomWrong} &
+  The same action does \emph{not} add the item to inventory when the player is in
+  a different room, confirming that \texttt{JUMP\_IF\_FALSE} branches correctly. \\
+\bottomrule
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════
+\section{End-to-End Smoke Test}
+% ════════════════════════════════════════════════════════════════
+
+The following session demonstrates a complete compile-and-run using the
+Middle-Earth demo program (\texttt{examples/04\_middle\_earth.dc}).
+Commands typed by the player are shown after the \texttt{>} prompt.
+
+\begin{lstlisting}[style=bash, caption={Full win-path game session}, numbers=none]
+$ ./durinsc ../examples/04_middle_earth.dc
+
+=== Durin's Code Adventure ===
+Commands: look, inventory, go <dir>, quit, or any action name.
+
+=== bag_end ===
+The cozy hole of a Hobbit. A golden ring glints on the table.
+Items here: the_ring
+Exits: east -> buckland
+
+> take ring
+The Precious is yours.
+
+> inventory
+Carrying: the_ring
+
+> go east
+=== buckland ===
+A quiet riverside village. The old ferry creaks at the dock.
+Exits: west -> bag_end, east -> mount_doom
+
+> go east
+=== mount_doom ===
+The air is thick with ash. The fiery Cracks of Doom loom ahead.
+NPCs here: sauron
+Exits: west -> buckland
+
+> destroy ring
+The ring is consumed by fire! Middle-earth is saved.
+
+*** You win! The quest is complete. ***
+\end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════
+\section{Debug Mode Output}
+% ════════════════════════════════════════════════════════════════
+
+The \texttt{--debug} flag dumps the symbol table and optimised TAC before running:
+
+\begin{lstlisting}[style=bash, caption={Debug mode output for 01\_hello\_world.dc}, numbers=none]
+$ ./durinsc ../examples/01_hello_world.dc --debug
+
+=== Symbol Table ===
+  room:   end
+  room:   start
+  action: press button
+
+=== TAC (optimized) ===
+action "press button":
+  t0 <- [] start
+  L0 <- [t0]
+     <- [] Hello, adventurer! Your journey begins.
+  L1 <- []
+  L0 <- []
+     <- [] There is no button here.
+  L1 <- []
+\end{lstlisting}
+
+% ════════════════════════════════════════════════════════════════
+\section{Semantic Error Demo}
+% ════════════════════════════════════════════════════════════════
+
+Compiling \texttt{examples/05\_error\_demo.dc} produces five semantic errors and
+zero warnings, confirming the collect-all-errors behaviour:
+
+\begin{lstlisting}[style=bash, caption={Semantic error output}, numbers=none]
+$ ./durinsc ../examples/05_error_demo.dc
+
+[ERROR] line 14: Duplicate room: "dungeon"
+[ERROR] line 23: Exit target "sky" not declared
+[ERROR] line 30: Duplicate exit direction "north" in room "courtyard"
+[ERROR] line 35: remove "phantom_item" -- unknown item
+[ERROR] line 40: has_item "phantom_item" -- unknown item
+
+Compilation failed: 5 error(s).
+\end{lstlisting}
+
+\end{document}

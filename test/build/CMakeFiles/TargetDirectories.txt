@@ -1,3 +1,0 @@
-/home/amh1k/5thsemester/cc/DurinsCode/tests/build/CMakeFiles/lexer_tests.dir
-/home/amh1k/5thsemester/cc/DurinsCode/tests/build/CMakeFiles/edit_cache.dir
-/home/amh1k/5thsemester/cc/DurinsCode/tests/build/CMakeFiles/rebuild_cache.dir

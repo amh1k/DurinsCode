@@ -24,7 +24,7 @@ target_include_directories(durins_semantic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sr
 target_link_libraries(durins_semantic PUBLIC durins_parser)
 
 # ── TAC ───────────────────────────────────────────────────────
-add_library(durins_tac src/tac/tac.cpp)
+add_library(durins_tac src/tac/tac.cpp src/tac/optimizer.cpp)
 target_include_directories(durins_tac PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(durins_tac PUBLIC durins_semantic)
 

@@ -72,7 +72,7 @@ static Token errorToken(const char *message)
     token.start = message;
     token.length = (int)strlen(message);
     token.line = lexer.line;
-    token.column = lexer.column;
+    token.column = lexer.column - 1; // column after advance; subtract 1 for the bad char
     lexer.lastEmitted = TOKEN_ERROR;
     return token;
 }
@@ -123,14 +123,15 @@ static void skipWhiteSpace()
         switch (c)
         {
         case ' ':
-        case '\r':
         case '\t':
             advance();
             break;
-        case '\n':
-            lexer.line++;
-            lexer.column = 1;
+        case '\r':
             advance();
+            if (peek() == '\n') advance(); // consume \r\n as one newline
+            break;
+        case '\n':
+            advance(); // advance() already increments line + resets column
             break;
         case '/':
             if (peekNext() == '/')

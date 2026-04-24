@@ -1,0 +1,42 @@
+// Example 2: Inventory System
+// Demonstrates player.inventory += / -= and player.has_item() condition.
+// The player picks up a sword in the armoury and uses it in the throne room.
+
+room "armoury" {
+    description "Racks of weapons line the walls. A gleaming sword catches the light."
+    item sword { damage: 50, type: "weapon" }
+    exit east "throne_room"
+}
+
+room "throne_room" {
+    description "The king sits on a golden throne. Guards eye you suspiciously."
+    npc king { health: 100, hostile: false }
+    exit west "armoury"
+}
+
+action "take sword" {
+    if current_room == "armoury" {
+        player.inventory += sword
+        print "You take the sword. It feels well-balanced."
+    } else {
+        print "There is no sword here."
+    }
+}
+
+action "drop sword" {
+    if player.has_item(sword) {
+        player.inventory -= sword
+        print "You set the sword down on the ground."
+    } else {
+        print "You are not carrying a sword."
+    }
+}
+
+action "threaten king" {
+    if current_room == "throne_room" && player.has_item(sword) {
+        print "You brandish the sword. The king raises an eyebrow."
+        player.reputation = 0
+    } else {
+        print "You wave your empty hand. The king is unimpressed."
+    }
+}

@@ -1,0 +1,49 @@
+// Example 4: Middle-Earth Adventure (Full Demo)
+// The canonical Tolkien demo from the project proposal.
+// Demonstrates all language features: rooms, items, NPCs, exits,
+// conditions with &&, has_item, remove, player attributes, win condition.
+
+room "bag_end" {
+    description "The cozy hole of a Hobbit. A golden ring glints on the table."
+    item the_ring { power: 100, type: "artifact" }
+    exit east "buckland"
+}
+
+room "buckland" {
+    description "A quiet riverside village. The old ferry creaks at the dock."
+    exit west "bag_end"
+    exit east "mount_doom"
+}
+
+room "mount_doom" {
+    description "The air is thick with ash. The fiery Cracks of Doom loom ahead."
+    npc sauron { health: 999, hostile: true }
+    exit west "buckland"
+}
+
+action "take ring" {
+    if current_room == "bag_end" {
+        player.inventory += the_ring
+        print "The Precious is yours."
+    } else {
+        print "There is nothing of value here."
+    }
+}
+
+action "examine ring" {
+    if player.has_item(the_ring) {
+        print "A plain golden band. It whispers your name."
+    } else {
+        print "You are not carrying any ring."
+    }
+}
+
+action "destroy ring" {
+    if current_room == "mount_doom" && player.has_item(the_ring) {
+        remove the_ring
+        print "The ring is consumed by fire! Middle-earth is saved."
+        player.win = true
+    } else {
+        print "You cannot do that here."
+    }
+}

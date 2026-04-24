@@ -1,0 +1,59 @@
+// Example 3: Multi-Room Navigation
+// Demonstrates a connected world graph with four rooms and multiple exits.
+// Tests that the compiler validates all exit targets.
+
+room "village" {
+    description "A peaceful village with cobblestone streets."
+    item map { detail: "worn", pages: 10 }
+    exit north "forest"
+    exit east "market"
+}
+
+room "forest" {
+    description "Tall pines block the sunlight. Something rustles in the undergrowth."
+    npc wolf { health: 30, hostile: true }
+    exit south "village"
+    exit east "cave"
+}
+
+room "market" {
+    description "Merchants hawk their wares. The smell of fresh bread fills the air."
+    item bread { nutrition: 20, type: "food" }
+    item potion { healing: 50, type: "consumable" }
+    exit west "village"
+}
+
+room "cave" {
+    description "A dark cave. Dripping water echoes. Treasure glints in the shadows."
+    item treasure { value: 500, type: "gold" }
+    exit west "forest"
+}
+
+action "take map" {
+    if current_room == "village" {
+        player.inventory += map
+        print "You pick up the worn map. Useful for navigation."
+    } else {
+        print "There is no map here."
+    }
+}
+
+action "take treasure" {
+    if current_room == "cave" {
+        player.inventory += treasure
+        player.gold = 500
+        print "You scoop up the gold coins. You are rich!"
+        player.win = true
+    } else {
+        print "There is no treasure here."
+    }
+}
+
+action "buy bread" {
+    if current_room == "market" {
+        player.inventory += bread
+        print "The merchant smiles as you hand over a coin."
+    } else {
+        print "You are not at the market."
+    }
+}

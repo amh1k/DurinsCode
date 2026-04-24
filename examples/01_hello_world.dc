@@ -1,0 +1,21 @@
+// Example 1: Hello World
+// Demonstrates the minimal valid Durin's Code program.
+// One room, one action, one print statement.
+
+room "start" {
+    description "You are standing in a white void. A single button sits before you."
+    exit north "end"
+}
+
+room "end" {
+    description "You have reached the end of the world."
+    exit south "start"
+}
+
+action "press button" {
+    if current_room == "start" {
+        print "Hello, adventurer! Your journey begins."
+    } else {
+        print "There is no button here."
+    }
+}

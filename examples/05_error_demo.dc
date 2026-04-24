@@ -1,0 +1,41 @@
+// Example 5: Semantic Error Demo (DO NOT COMPILE — intentionally broken)
+// This file demonstrates every category of semantic error the compiler detects.
+// Run with: durinsc 05_error_demo.dc
+// Expected: compilation fails with 5 semantic errors, 0 warnings.
+
+// ERROR 1: Duplicate room name
+room "dungeon" {
+    description "A damp cell."
+    exit north "tower"
+}
+
+room "dungeon" {
+    description "A second dungeon — same name as above. Duplicate!"
+    exit north "tower"
+}
+
+// ERROR 2: Exit target does not exist
+room "tower" {
+    description "A tall stone tower."
+    exit up "sky"       // "sky" is never declared
+    exit down "dungeon"
+}
+
+// ERROR 3: Duplicate exit direction in the same room
+room "courtyard" {
+    description "An open courtyard."
+    exit north "tower"
+    exit north "dungeon"   // north used twice — duplicate direction
+}
+
+// ERROR 4: remove references an undeclared item
+action "grab ghost item" {
+    remove phantom_item    // phantom_item never declared anywhere
+}
+
+// ERROR 5: has_item references an undeclared item
+action "check ghost item" {
+    if player.has_item(phantom_item) {
+        print "This should never compile."
+    }
+}

@@ -219,9 +219,7 @@ TEST(LexerTest, ReportsColumnNumbers)
     const char *source = "room\n  @\naction";
     initLexer(source);
 
-    // Skip "room" and newline
-    scanToken(); // TOKEN_ROOM
-    scanToken(); // newline consumed by skipWhiteSpace
+    scanToken(); // TOKEN_ROOM (skipWhiteSpace handles newline internally)
 
     auto err = scanToken(); // Should hit @
     EXPECT_EQ(err.type, TOKEN_ERROR);

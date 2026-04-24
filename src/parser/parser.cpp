@@ -377,6 +377,16 @@ static std::unique_ptr<ConditionNode> parseCondition()
 
 static std::unique_ptr<ASTNode> parseStatement()
 {
+    if (match(TOKEN_REMOVE))
+    {
+        auto node = std::make_unique<RemoveStmtNode>();
+        node->line = parser.previous.line;
+        if (!consume(TOKEN_IDENTIFIER, "Expect item name after 'remove'."))
+            return nullptr;
+        node->itemName = std::string(parser.previous.start, parser.previous.length);
+        return std::move(node);
+    }
+
     if (match(TOKEN_PRINT))
     {
         auto node = std::make_unique<PrintStmtNode>();
@@ -689,6 +699,7 @@ ParseResult parseProgram(const char *source)
 {
     initParser();
     initLexer(source);
+    advance(); // prime parser.current with the first real token
     ParseResult result;
     result.ast = std::make_unique<ProgramNode>();
     // ProgramNode *program = new ProgramNode();
