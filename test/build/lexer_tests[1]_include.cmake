@@ -1,0 +1,5 @@
+if(EXISTS "/home/amh1k/5thsemester/cc/DurinsCode/tests/build/lexer_tests[1]_tests.cmake")
+  include("/home/amh1k/5thsemester/cc/DurinsCode/tests/build/lexer_tests[1]_tests.cmake")
+else()
+  add_test(lexer_tests_NOT_BUILT lexer_tests_NOT_BUILT)
+endif()
