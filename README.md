@@ -4,10 +4,7 @@
 ![CMake](https://img.shields.io/badge/build-CMake-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
-![Stars](https://img.shields.io/github/stars/amh1k/DurinsCode?style=for-the-badge)
-![Forks](https://img.shields.io/github/forks/amh1k/DurinsCode?style=for-the-badge)
-![Issues](https://img.shields.io/github/issues/amh1k/DurinsCode?style=for-the-badge)
-![Last Commit](https://img.shields.io/github/last-commit/amh1k/DurinsCode?style=for-the-badge)
+
 
 **Durin’s Code** is a domain-specific language (DSL) and compiler system built for designing structured interactive environments, primarily for educational compiler construction (CS4031).
 
