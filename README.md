@@ -146,7 +146,10 @@ flowchart LR
 
 ## 👨‍💻 Maintainers
 
-* Abdullah — Project Lead
+* Abdul Moiz Hussain
+* Huzaifa Abdul Rehman
+* Muhammad Abdullah Khan
+  
 * CS4031 Compiler Construction Team
 
 ---
