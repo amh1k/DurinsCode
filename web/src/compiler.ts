@@ -24,13 +24,14 @@ let modulePromise: Promise<DurinsModule> | null = null;
 
 async function loadModule(): Promise<DurinsModule> {
   if (!modulePromise) {
+    const baseUrl = import.meta.env.BASE_URL;
     const importPublicModule = new Function("path", "return import(path)") as (
       path: string
     ) => Promise<DurinsFactory>;
-    modulePromise = importPublicModule("/wasm/durins.js").then((factory) =>
+    modulePromise = importPublicModule(`${baseUrl}wasm/durins.js`).then((factory) =>
       factory.default({
         locateFile: (path: string) =>
-          path.endsWith(".wasm") ? `/wasm/${path}` : path
+          path.endsWith(".wasm") ? `${baseUrl}wasm/${path}` : path
       })
     );
   }
