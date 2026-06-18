@@ -18,38 +18,189 @@ let isCompiling = false;
 
 app.innerHTML = `
   <main class="shell">
-    <section class="topbar">
-      <div>
-        <h1>Durin's Code</h1>
-        <p>Compile the adventure DSL to WebAssembly-powered bytecode, then play it in the browser.</p>
+    <nav class="siteNav" aria-label="Primary navigation">
+      <a class="brand" href="#hero" aria-label="Durin's Code home">
+        <span class="ringLogo" aria-hidden="true"></span>
+        <span>Durin's Code</span>
+      </a>
+      <div class="navLinks">
+        <a href="#docs">Docs</a>
+        <a href="#compiler">Compiler</a>
+        <a href="https://github.com/amh1k/DurinsCode" target="_blank" rel="noreferrer">GitHub</a>
       </div>
-      <div class="actions">
-        <select id="exampleSelect" aria-label="Example"></select>
-        <button id="loadExample">Load</button>
-        <button id="compileButton" class="primary">Compile</button>
-        <button id="resetGame">Reset Game</button>
+    </nav>
+
+    <section id="hero" class="heroSection">
+      <div class="heroContent">
+        <p class="eyebrow">A WebAssembly compiler forged for text adventures</p>
+        <h1>Build playable quests from a tiny fantasy language.</h1>
+        <p class="heroCopy">
+          Durin's Code turns rooms, relics, NPCs, exits, and action handlers into JSON bytecode,
+          then runs the adventure directly in your browser.
+        </p>
+        <div class="heroActions">
+          <a class="buttonLink primary" href="#compiler">Open compiler</a>
+          <a class="buttonLink ghost" href="#docs">Read language docs</a>
+        </div>
+      </div>
+
+      <div class="heroPreview" aria-label="Compiler preview">
+        <div class="previewBar">
+          <span class="dot amber"></span>
+          <span class="dot green"></span>
+          <span class="dot red"></span>
+          <span>middle_earth.dc</span>
+        </div>
+        <div class="previewGrid">
+          <pre><code>room "bag_end" {
+  description "A golden ring glints."
+  item the_ring { power: 100 }
+  exit east "buckland"
+}
+
+action "destroy ring" {
+  if current_room == "mount_doom"
+     && player.has_item(the_ring) {
+    player.win = true
+  }
+}</code></pre>
+          <div class="previewOutput">
+            <span class="chip">WASM compile</span>
+            <span class="chip">JSON bytecode</span>
+            <span class="chip">Playable VM</span>
+            <div class="questCard">
+              <strong>Mount Doom</strong>
+              <p>The air is thick with ash. The fiery Cracks of Doom loom ahead.</p>
+              <span>&gt; destroy ring</span>
+              <b>YOU WIN</b>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="workspace">
-      <div class="editorPane">
-        <div class="paneHeader">
-          <span>source.dc</span>
-          <span id="compileStatus">Not compiled</span>
-        </div>
-        <textarea id="sourceEditor" spellcheck="false"></textarea>
+    <section id="docs" class="docsSection">
+      <div class="sectionIntro">
+        <p class="eyebrow">Language reference</p>
+        <h2>Everything you need to write a Durin's Code adventure.</h2>
+        <p>
+          The language is intentionally small: declare the world, define player actions,
+          compile to bytecode, and let the VM handle exploration.
+        </p>
       </div>
 
-      <div class="resultPane">
-        <nav class="tabs" aria-label="Output tabs">
-          <button data-tab="game" class="active">Game</button>
-          <button data-tab="diagnostics">Diagnostics</button>
-          <button data-tab="bytecode">Bytecode</button>
-          <button data-tab="debug">Debug</button>
-          <button data-tab="map">World Map</button>
-        </nav>
-        <div id="panel"></div>
+      <div class="docGrid">
+        <article class="docPanel wide">
+          <h3>Compiler Pipeline</h3>
+          <p>Source is scanned, parsed into an AST, semantically checked, lowered to TAC, optimised, serialised as JSON bytecode, and executed by the VM.</p>
+          <pre><code>source.dc -> lexer -> parser -> semantic analyser
+          -> TAC -> optimiser -> JSON bytecode -> VM</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Program Shape</h3>
+          <p>A program is a list of top-level declarations. Only <code>room</code> and <code>action</code> exist at the top level.</p>
+          <pre><code>room "bag_end" { ... }
+action "take ring" { ... }</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Rooms</h3>
+          <p>Rooms are graph nodes. They can contain one description, items, NPCs, and directed exits.</p>
+          <pre><code>room "village" {
+  description "A peaceful village."
+  item map { pages: 10 }
+  npc wolf { hostile: true }
+  exit north "forest"
+}</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Items and NPCs</h3>
+          <p>Entities use property maps with integer, string, or boolean values. Item names become globally referenceable in actions.</p>
+          <pre><code>item sword { damage: 50, type: "weapon" }
+npc king { health: 100, hostile: false }</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Actions</h3>
+          <p>Actions are commands the player types verbatim. They contain print statements, inventory updates, removals, assignments, and conditionals.</p>
+          <pre><code>action "take sword" {
+  player.inventory += sword
+  print "You take the sword."
+}</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Conditions</h3>
+          <p>Branch on the current room, inventory, or player attributes. Use <code>&&</code> for reliable compound checks in the current build.</p>
+          <pre><code>if current_room == "armoury"
+   && player.has_item(sword) {
+  print "Ready."
+}</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Player State</h3>
+          <p>The VM tracks inventory plus integer, boolean, and string attributes. <code>player.win = true</code> completes the quest.</p>
+          <pre><code>player.inventory += the_ring
+player.gold = 500
+player.win = true</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Static Checks</h3>
+          <p>The semantic analyser catches duplicate rooms/actions, invalid exits, duplicate exit directions, and references to undeclared items or rooms.</p>
+          <pre><code>exit east "missing_room"  // compile error
+remove phantom_item      // compile error</code></pre>
+        </article>
+
+        <article class="docPanel">
+          <h3>Runtime Commands</h3>
+          <p>The browser VM supports the same core player flow as the terminal version.</p>
+          <pre><code>look
+go east
+inventory
+take ring
+destroy ring</code></pre>
+        </article>
       </div>
+    </section>
+
+    <section id="compiler" class="compilerSection">
+      <div class="compilerHeader">
+        <div>
+          <p class="eyebrow">Live compiler</p>
+          <h2>Write, compile, inspect, and play.</h2>
+        </div>
+        <div class="actions">
+          <select id="exampleSelect" aria-label="Example"></select>
+          <button id="loadExample">Load</button>
+          <button id="compileButton" class="primary">Compile</button>
+          <button id="resetGame">Reset Game</button>
+        </div>
+      </div>
+
+      <section class="workspace" aria-label="Durin's Code compiler">
+        <div class="editorPane">
+          <div class="paneHeader">
+            <span>source.dc</span>
+            <span id="compileStatus">Not compiled</span>
+          </div>
+          <textarea id="sourceEditor" spellcheck="false"></textarea>
+        </div>
+
+        <div class="resultPane">
+          <nav class="tabs" aria-label="Output tabs">
+            <button data-tab="game" class="active">Game</button>
+            <button data-tab="diagnostics">Diagnostics</button>
+            <button data-tab="bytecode">Bytecode</button>
+            <button data-tab="debug">Debug</button>
+            <button data-tab="map">World Map</button>
+          </nav>
+          <div id="panel"></div>
+        </div>
+      </section>
     </section>
   </main>
 `;
