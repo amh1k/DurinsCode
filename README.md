@@ -6,7 +6,7 @@ Durin's Code is a domain-specific language for authoring interactive fiction wor
 
 The project includes both a terminal compiler/runtime and a browser showcase powered by WebAssembly.
 
-![Durin's Code hero page](Digital_Documentation/images/260618_23h04m33s_screenshot.png)
+![Durin's Code hero page](Digital_Documentation/images/260618_23h04m30s_screenshot.png)
 
 ## Table of Contents
 
@@ -68,19 +68,19 @@ action "destroy ring" {
 
 Core language constructs:
 
-| Construct | Purpose |
-| --- | --- |
-| `room "name" { ... }` | Declares a room in the adventure graph. |
-| `description "text"` | Text shown when the player looks around. |
+| Construct                  | Purpose                                             |
+| -------------------------- | --------------------------------------------------- |
+| `room "name" { ... }`      | Declares a room in the adventure graph.             |
+| `description "text"`       | Text shown when the player looks around.            |
 | `item name { key: value }` | Places an item in a room and registers it globally. |
-| `npc name { key: value }` | Places an NPC in a room. |
-| `exit direction "room"` | Adds a directed transition to another room. |
-| `action "command" { ... }` | Defines a player command. |
-| `print "text"` | Writes narration to the VM output. |
-| `remove item` | Removes an item from inventory/game state. |
-| `player.inventory += item` | Adds an item to inventory. |
-| `player.attr = value` | Sets dynamic player state. |
-| `if ... else ...` | Branches action logic. |
+| `npc name { key: value }`  | Places an NPC in a room.                            |
+| `exit direction "room"`    | Adds a directed transition to another room.         |
+| `action "command" { ... }` | Defines a player command.                           |
+| `print "text"`             | Writes narration to the VM output.                  |
+| `remove item`              | Removes an item from inventory/game state.          |
+| `player.inventory += item` | Adds an item to inventory.                          |
+| `player.attr = value`      | Sets dynamic player state.                          |
+| `if ... else ...`          | Branches action logic.                              |
 
 ## Compiler Pipeline
 
@@ -99,15 +99,15 @@ flowchart LR
 
 ### Phase Breakdown
 
-| Phase | Input | Output | Responsibility |
-| --- | --- | --- | --- |
-| Lexer | Raw source | Token stream | Scans keywords, identifiers, literals, operators, comments, and line/column info. |
-| Parser | Tokens | AST | Builds a typed AST using recursive descent. |
-| Semantic Analyser | AST | Symbol table + diagnostics | Validates rooms, exits, actions, items, and references. |
-| TAC Generator | AST + symbols | Three-Address Code | Lowers action logic into flat instructions. |
-| Optimiser | Raw TAC | Optimised TAC | Applies dead-code elimination and redundant-AND folding. |
-| Code Generator | AST + TAC | JSON bytecode | Serialises the world graph and action instructions. |
-| Virtual Machine | Bytecode | Playable session | Maintains game state and executes player commands. |
+| Phase             | Input         | Output                     | Responsibility                                                                    |
+| ----------------- | ------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| Lexer             | Raw source    | Token stream               | Scans keywords, identifiers, literals, operators, comments, and line/column info. |
+| Parser            | Tokens        | AST                        | Builds a typed AST using recursive descent.                                       |
+| Semantic Analyser | AST           | Symbol table + diagnostics | Validates rooms, exits, actions, items, and references.                           |
+| TAC Generator     | AST + symbols | Three-Address Code         | Lowers action logic into flat instructions.                                       |
+| Optimiser         | Raw TAC       | Optimised TAC              | Applies dead-code elimination and redundant-AND folding.                          |
+| Code Generator    | AST + TAC     | JSON bytecode              | Serialises the world graph and action instructions.                               |
+| Virtual Machine   | Bytecode      | Playable session           | Maintains game state and executes player commands.                                |
 
 ## Architecture Highlights
 
@@ -317,13 +317,13 @@ The browser compiler page supports:
 
 The `examples/` directory contains:
 
-| File | Purpose |
-| --- | --- |
-| `01_hello_world.dc` | Minimal valid adventure with two rooms and one action. |
-| `02_inventory.dc` | Demonstrates inventory add/remove and `player.has_item`. |
-| `03_multiroom.dc` | Demonstrates a connected multi-room world graph. |
-| `04_middle_earth.dc` | Full showcase adventure and recommended demo. |
-| `05_error_demo.dc` | Intentionally broken semantic-error demo. |
+| File                 | Purpose                                                  |
+| -------------------- | -------------------------------------------------------- |
+| `01_hello_world.dc`  | Minimal valid adventure with two rooms and one action.   |
+| `02_inventory.dc`    | Demonstrates inventory add/remove and `player.has_item`. |
+| `03_multiroom.dc`    | Demonstrates a connected multi-room world graph.         |
+| `04_middle_earth.dc` | Full showcase adventure and recommended demo.            |
+| `05_error_demo.dc`   | Intentionally broken semantic-error demo.                |
 
 Recommended demo path for `04_middle_earth.dc`:
 
@@ -416,14 +416,14 @@ ctest --test-dir build --output-on-failure
 
 Test coverage summary:
 
-| Suite | Tests | Covers |
-| --- | ---: | --- |
-| Lexer | 12 | Keywords, punctuation, literals, comments, errors, line endings. |
-| Parser | 15 | Rooms, items, NPCs, exits, conditions, assignments, error cases. |
-| Semantic | 10 | Symbol table, duplicate declarations, invalid references. |
-| TAC | 4 | Print, conditions, assignments, remove instruction generation. |
-| Codegen | 3 | Valid JSON, world serialisation, action instruction output. |
-| VM | 5 | Bytecode loading, action execution, branching, inventory changes. |
+| Suite    | Tests | Covers                                                            |
+| -------- | ----: | ----------------------------------------------------------------- |
+| Lexer    |    12 | Keywords, punctuation, literals, comments, errors, line endings.  |
+| Parser   |    15 | Rooms, items, NPCs, exits, conditions, assignments, error cases.  |
+| Semantic |    10 | Symbol table, duplicate declarations, invalid references.         |
+| TAC      |     4 | Print, conditions, assignments, remove instruction generation.    |
+| Codegen  |     3 | Valid JSON, world serialisation, action instruction output.       |
+| VM       |     5 | Bytecode loading, action execution, branching, inventory changes. |
 
 ## Project Structure
 
@@ -475,4 +475,3 @@ Durin's Code demonstrates the full compiler construction story in a compact but 
 - browser-based compiler playground
 
 It is small enough to understand end-to-end, but complete enough to show real compiler engineering.
-
