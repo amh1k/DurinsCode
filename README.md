@@ -23,6 +23,7 @@ The project includes both a terminal compiler/runtime and a browser showcase pow
 - [Testing](#testing)
 - [Project Structure](#project-structure)
 - [Known Notes](#known-notes)
+- [Maintainers](#maintainers)
 
 ## What This Project Does
 
@@ -456,6 +457,12 @@ DurinsCode/
 - The language is intentionally small and focused on text-adventure structure.
 - `||` is lexed and parsed, but current showcased examples avoid relying on OR-heavy logic until TAC lowering is fully aligned.
 - Browser compilation uses WebAssembly for the compiler and TypeScript for the web VM.
+
+## Maintainers
+
+- Abdul Moiz Hussain
+- Huzaifa Abdul Rehman
+- Muhammad Abdullah Khan
 
 ## Why This Project Matters
 
