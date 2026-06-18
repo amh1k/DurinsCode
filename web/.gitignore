@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.emcache/
+public/wasm/durins.js
+public/wasm/durins.wasm
