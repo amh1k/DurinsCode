@@ -1,0 +1,274 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #efe9da;
+  background: #171713;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+select,
+textarea,
+input {
+  font: inherit;
+}
+
+button,
+select {
+  border: 1px solid #5b624f;
+  background: #282c22;
+  color: #f4e9cd;
+  border-radius: 6px;
+  padding: 0.58rem 0.72rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover,
+select:hover {
+  border-color: #9da66f;
+}
+
+button.primary {
+  background: #c7a64a;
+  border-color: #e1c76c;
+  color: #19160f;
+  font-weight: 700;
+}
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #34382d;
+  background: #1e2119;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.35rem;
+}
+
+.topbar p {
+  color: #b9b19e;
+  margin-top: 0.25rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) minmax(380px, 1fr);
+  gap: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+.editorPane,
+.resultPane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorPane {
+  border-right: 1px solid #34382d;
+}
+
+.paneHeader {
+  display: flex;
+  justify-content: space-between;
+  color: #d7c994;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #34382d;
+  background: #20231c;
+}
+
+#sourceEditor {
+  flex: 1;
+  width: 100%;
+  min-height: 28rem;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 1rem;
+  background: #11130f;
+  color: #efe9da;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.55rem;
+  border-bottom: 1px solid #34382d;
+  background: #20231c;
+  overflow-x: auto;
+}
+
+.tabs button {
+  white-space: nowrap;
+}
+
+.tabs button.active {
+  background: #41523a;
+  border-color: #a6bf78;
+}
+
+#panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.empty {
+  color: #b9b19e;
+  display: grid;
+  min-height: 18rem;
+  place-items: center;
+  text-align: center;
+}
+
+.gameLayout {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gameLog,
+.codeBlock {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 22rem;
+  padding: 1rem;
+  border: 1px solid #34382d;
+  border-radius: 8px;
+  background: #11130f;
+  color: #efe9da;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  line-height: 1.55;
+}
+
+.commandBar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.commandBar input {
+  min-width: 0;
+  border: 1px solid #5b624f;
+  border-radius: 6px;
+  padding: 0.65rem 0.75rem;
+  background: #171a14;
+  color: #fff5dd;
+}
+
+.hintRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.hint {
+  padding: 0.42rem 0.55rem;
+  color: #dfe8ba;
+}
+
+.stateStrip {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: #b9b19e;
+  font-size: 0.9rem;
+}
+
+.mapGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.roomCard {
+  border: 1px solid #3f4737;
+  border-radius: 8px;
+  background: #1b1f17;
+  padding: 0.85rem;
+}
+
+.roomCard h2 {
+  font-size: 1rem;
+  color: #e6cf75;
+  margin-bottom: 0.45rem;
+}
+
+.roomCard p {
+  color: #d6cebc;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+
+.edgeList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: #b8d88b;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .editorPane {
+    border-right: 0;
+    border-bottom: 1px solid #34382d;
+  }
+}
