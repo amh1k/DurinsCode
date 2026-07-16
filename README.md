@@ -1,65 +1,67 @@
+<div align="center">
+
 # Durin's Code
 
-**A C++17 compiler and WebAssembly playground for building playable 8-bit text adventures.**
+### Write a world. Compile an adventure. Play it anywhere.
 
-Durin's Code is a domain-specific language for authoring interactive fiction worlds. A `.dc` program describes rooms, items, NPCs, exits, and player actions; the compiler validates the world, lowers actions into Three-Address Code, emits JSON bytecode, and runs the result in a virtual machine.
+A C++17 compiler and WebAssembly playground for an 8-bit text-adventure language.
 
-The project includes both a terminal compiler/runtime and a browser showcase powered by WebAssembly.
+[![Deploy Durin's Code Web Playground](https://github.com/amh1k/DurinsCode/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/amh1k/DurinsCode/actions/workflows/deploy-pages.yml)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![WebAssembly](https://img.shields.io/badge/WebAssembly-Emscripten-654FF0?logo=webassembly&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-49%20passing-2ea44f)
 
-![Durin's Code hero page](Digital_Documentation/images/260618_23h04m30s_screenshot.png)
+[Live Playground](https://abdulmoizhussain.me/DurinsCode/) · [Language Reference](Digital_Documentation/Language_Reference_Manual.pdf) · [Compiler Architecture](Digital_Documentation/Compiler_Architecture_Document.pdf) · [Report an Issue](https://github.com/amh1k/DurinsCode/issues)
 
-## Table of Contents
+</div>
 
-- [What This Project Does](#what-this-project-does)
-- [Language At A Glance](#language-at-a-glance)
-- [Compiler Pipeline](#compiler-pipeline)
-- [Architecture Highlights](#architecture-highlights)
-- [Terminal CLI](#terminal-cli)
-- [WebAssembly Playground](#webassembly-playground)
-- [Documentation Page](#documentation-page)
-- [Compiler Playground Features](#compiler-playground-features)
-- [Examples](#examples)
-- [Build And Run](#build-and-run)
-- [Testing](#testing)
-- [Project Structure](#project-structure)
-- [Known Notes](#known-notes)
-- [Maintainers](#maintainers)
+![Durin's Code browser experience](Digital_Documentation/images/260618_23h04m30s_screenshot.png)
 
-## What This Project Does
+## Overview
 
-Durin's Code turns a declarative adventure script into a playable game.
+Durin's Code is a domain-specific language and end-to-end compiler for building playable text adventures. Authors describe rooms, items, NPCs, exits, conditions, and player actions in a compact `.dc` source file. The compiler validates the world, lowers action logic to Three-Address Code (TAC), optimizes it, emits portable JSON bytecode, and executes the result in a virtual machine.
 
-The language lets authors define:
+The same compiler runs in two environments:
 
-- **Rooms** as nodes in a world graph.
-- **Items** with typed properties.
-- **NPCs** with typed properties.
-- **Exits** as directed edges between rooms.
-- **Actions** as player-triggered command handlers.
-- **Conditions** based on current room, inventory, and player attributes.
-- **Runtime state** such as inventory, health, gold, reputation, or win state.
+- **Native:** a C++ command-line compiler and interactive VM.
+- **Browser:** the C++ compiler built to WebAssembly, paired with a TypeScript IDE and VM. Compilation and execution stay entirely client-side.
 
-The compiler performs static checks before runtime, so invalid exits, duplicate declarations, and missing item references are caught early instead of crashing the game.
+## Highlights
 
-## Language At A Glance
+- Complete compiler toolchain: lexer, recursive-descent parser, typed AST, semantic analysis, TAC, optimization, code generation, and VM execution.
+- Two-pass semantic analysis with forward-reference support and diagnostics for duplicate or unresolved declarations.
+- JSON bytecode as a stable boundary between the compiler and native/browser runtimes.
+- Browser IDE with examples, diagnostics, symbol-table and TAC inspection, bytecode output, world-map visualization, and interactive gameplay.
+- 49 automated tests across six compiler and runtime suites.
+- Static GitHub Pages deployment with no application server or server-side runtime.
+
+## Language at a Glance
 
 ```dc
 room "bag_end" {
-    description "The cozy hole of a Hobbit. A golden ring glints on the table."
+    description "A golden ring glints on the table."
     item the_ring { power: 100, type: "artifact" }
-    exit east "buckland"
+    exit east "mount_doom"
 }
 
 room "mount_doom" {
-    description "The air is thick with ash. The fiery Cracks of Doom loom ahead."
+    description "The fiery Cracks of Doom loom ahead."
     npc sauron { health: 999, hostile: true }
-    exit west "buckland"
+    exit west "bag_end"
+}
+
+action "take ring" {
+    if current_room == "bag_end" {
+        player.inventory += the_ring
+        print "You take the One Ring."
+    }
 }
 
 action "destroy ring" {
     if current_room == "mount_doom" && player.has_item(the_ring) {
         remove the_ring
-        print "The ring is consumed by fire! Middle-earth is saved."
+        print "Middle-earth is saved."
         player.win = true
     } else {
         print "You cannot do that here."
@@ -67,266 +69,114 @@ action "destroy ring" {
 }
 ```
 
-Core language constructs:
+Language primitives include:
 
-| Construct                  | Purpose                                             |
-| -------------------------- | --------------------------------------------------- |
-| `room "name" { ... }`      | Declares a room in the adventure graph.             |
-| `description "text"`       | Text shown when the player looks around.            |
-| `item name { key: value }` | Places an item in a room and registers it globally. |
-| `npc name { key: value }`  | Places an NPC in a room.                            |
-| `exit direction "room"`    | Adds a directed transition to another room.         |
-| `action "command" { ... }` | Defines a player command.                           |
-| `print "text"`             | Writes narration to the VM output.                  |
-| `remove item`              | Removes an item from inventory/game state.          |
-| `player.inventory += item` | Adds an item to inventory.                          |
-| `player.attr = value`      | Sets dynamic player state.                          |
-| `if ... else ...`          | Branches action logic.                              |
+| Construct | Purpose |
+| --- | --- |
+| `room "name" { ... }` | Declare a room in the world graph. |
+| `item name { ... }` | Place an item and define typed properties. |
+| `npc name { ... }` | Place an NPC and define typed properties. |
+| `exit direction "room"` | Create a directed room transition. |
+| `action "command" { ... }` | Define a command the player can execute. |
+| `if ... else ...` | Branch on room, inventory, or player state. |
+| `player.inventory += item` | Add an item to the player's inventory. |
+| `player.attribute = value` | Update dynamic integer, Boolean, or string state. |
+| `print "text"` | Emit narration through the VM. |
 
-## Compiler Pipeline
+See the [Language Reference Manual](Digital_Documentation/Language_Reference_Manual.pdf) for the complete grammar and semantic rules.
 
-Durin's Code is implemented as a full multi-phase compiler, not just an interpreter.
+## Compiler Architecture
 
 ```mermaid
 flowchart LR
-    A[.dc Source] --> B[Lexer]
-    B --> C[Parser]
-    C --> D[Semantic Analyser]
-    D --> E[TAC Generator]
-    E --> F[Optimiser]
-    F --> G[JSON Bytecode]
-    G --> H[Virtual Machine]
+    A[.dc source] --> B[Lexer]
+    B --> C[Recursive-descent parser]
+    C --> D[Typed AST]
+    D --> E[Semantic analyzer]
+    E --> F[TAC generator]
+    F --> G[Optimizer]
+    G --> H[JSON bytecode]
+    H --> I[Native C++ VM]
+    H --> J[Browser TypeScript VM]
 ```
 
-### Phase Breakdown
+| Stage | Responsibility |
+| --- | --- |
+| Lexer | Scans keywords, identifiers, literals, operators, comments, and source positions. |
+| Parser | Builds an owned AST with a hand-written recursive-descent parser and panic-mode recovery. |
+| Semantic analyzer | Registers declarations, resolves forward references, and reports invalid world state. |
+| TAC generator | Lowers action bodies into flat instructions such as `CHECK_ROOM`, `HAS_ITEM`, `JUMP_IF_FALSE`, and `SET_PLAYER_ATTR`. |
+| Optimizer | Eliminates unreachable TAC after unconditional jumps and folds redundant Boolean operations. |
+| Code generator | Serializes world data and executable actions into JSON bytecode. |
+| Virtual machine | Manages rooms, inventory, attributes, movement, actions, output, and win state. |
 
-| Phase             | Input         | Output                     | Responsibility                                                                    |
-| ----------------- | ------------- | -------------------------- | --------------------------------------------------------------------------------- |
-| Lexer             | Raw source    | Token stream               | Scans keywords, identifiers, literals, operators, comments, and line/column info. |
-| Parser            | Tokens        | AST                        | Builds a typed AST using recursive descent.                                       |
-| Semantic Analyser | AST           | Symbol table + diagnostics | Validates rooms, exits, actions, items, and references.                           |
-| TAC Generator     | AST + symbols | Three-Address Code         | Lowers action logic into flat instructions.                                       |
-| Optimiser         | Raw TAC       | Optimised TAC              | Applies dead-code elimination and redundant-AND folding.                          |
-| Code Generator    | AST + TAC     | JSON bytecode              | Serialises the world graph and action instructions.                               |
-| Virtual Machine   | Bytecode      | Playable session           | Maintains game state and executes player commands.                                |
+More implementation detail is available in the [Compiler Architecture Document](Digital_Documentation/Compiler_Architecture_Document.pdf).
 
-## Architecture Highlights
+## Browser Playground
 
-### Lexer
+The browser app compiles the C++ frontend with Emscripten and loads it as WebAssembly. Valid source becomes JSON bytecode, which the TypeScript VM executes directly in the page. No source code or game state is sent to a backend.
 
-- Pull-based scanner using `scanToken()`.
-- Tracks line and column positions.
-- Supports `//` comments.
-- Rejects floating-point literals at lex time.
-- Uses context-sensitive dot handling for `player.attr` and `room.attr`.
+<table>
+  <tr>
+    <td width="50%">
+      <img src="Digital_Documentation/images/260618_23h04m55s_screenshot.png" alt="Durin's Code language and architecture documentation page">
+      <p align="center"><strong>Language and architecture documentation</strong></p>
+    </td>
+    <td width="50%">
+      <img src="Digital_Documentation/images/260618_23h05m14s_screenshot.png" alt="Durin's Code compiler playground">
+      <p align="center"><strong>Compiler, diagnostics, bytecode, and game runtime</strong></p>
+    </td>
+  </tr>
+</table>
 
-### Parser
+The playground includes:
 
-- Hand-written recursive descent parser.
-- Produces an owned AST using `std::unique_ptr`.
-- Supports panic-mode recovery around declarations, statements, and block boundaries.
+- Editable source and five bundled examples.
+- Compile-and-play, compile-only, and optional auto-compile workflows.
+- Structured diagnostics for lexical, syntax, and semantic errors.
+- Symbol table, optimized TAC, JSON bytecode, and world-map views.
+- In-browser commands, game output, inventory, and runtime state.
+- Source and bytecode copy/download controls.
 
-### Semantic Analysis
+## Quick Start
 
-The analyser uses a two-pass design:
+### Run the Web App
 
-1. Register all top-level rooms, items, NPCs, and actions.
-2. Validate references after every declaration is known.
-
-This allows forward references such as an exit pointing to a room declared later.
-
-Semantic checks include:
-
-- Duplicate room names.
-- Duplicate action names.
-- Exit target does not exist.
-- Duplicate exit directions inside one room.
-- `remove` references an undeclared item.
-- `player.has_item(...)` references an undeclared item.
-- `current_room == "..."` references an undeclared room.
-
-### TAC And Optimisation
-
-Action bodies are lowered into TAC instructions such as:
-
-- `CHECK_ROOM`
-- `HAS_ITEM`
-- `COMPARE_EQ`
-- `JUMP_IF_FALSE`
-- `JUMP`
-- `LABEL`
-- `PRINT`
-- `REMOVE_ITEM`
-- `SET_PLAYER_ATTR`
-
-The optimiser currently performs:
-
-- **Dead-code elimination** after unconditional jumps.
-- **Redundant AND folding** when both operands are the same temporary.
-
-### JSON Bytecode
-
-The generated bytecode is the handoff point between compiler and VM.
-
-```json
-{
-  "world": [
-    {
-      "name": "bag_end",
-      "description": "The cozy hole of a Hobbit.",
-      "items": [
-        {
-          "name": "the_ring",
-          "properties": {
-            "power": 100,
-            "type": "artifact"
-          }
-        }
-      ],
-      "npcs": [],
-      "exits": [
-        {
-          "direction": "east",
-          "target": "buckland"
-        }
-      ]
-    }
-  ],
-  "start_room": "bag_end",
-  "actions": [
-    {
-      "name": "take ring",
-      "instructions": []
-    }
-  ]
-}
-```
-
-### Virtual Machine
-
-The VM maintains:
-
-- `currentRoom`
-- `inventory`
-- integer player attributes
-- boolean player attributes
-- string player attributes
-
-Built-in commands:
-
-- `look`
-- `go <direction>`
-- `inventory` / `inv`
-- `help`
-- `quit`
-
-Any other input is matched against compiled action names.
-
-## Terminal CLI
-
-The native CLI is `durinsc`.
+Prerequisites: [Node.js](https://nodejs.org/) 18+, npm, and the [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) with `emcc` available on `PATH`.
 
 ```bash
-./durinsc <source.dc>
+git clone https://github.com/amh1k/DurinsCode.git
+cd DurinsCode/web
+npm ci
+npm run build:wasm
+npm run dev
 ```
 
-Compiles and immediately runs an adventure.
+Open the URL printed by Vite, normally `http://localhost:5173`.
+
+For a production build:
 
 ```bash
-./durinsc <source.dc> -o <out.json>
+cd web
+npm run build
+npm run preview
 ```
 
-Compiles source to JSON bytecode without launching the VM.
+The deployable static site is written to `web/dist/`.
+
+### Build the Native Compiler
+
+Prerequisites: CMake 3.23+, a C++17 compiler, and GoogleTest.
 
 ```bash
-./durinsc --run <bytecode.json>
+git clone https://github.com/amh1k/DurinsCode.git
+cd DurinsCode
+cmake -S . -B build
+cmake --build build
+./build/durinsc examples/04_middle_earth.dc
 ```
 
-Runs precompiled bytecode directly.
-
-```bash
-./durinsc <source.dc> --debug
-```
-
-Prints compiler internals before running:
-
-- symbol table
-- optimised TAC
-
-```bash
-./durinsc --interactive
-```
-
-Starts a REPL-like mode where snippets can be compiled and run interactively.
-
-## WebAssembly Playground
-
-The project also includes a web showcase in `web/`.
-
-It compiles the C++ compiler pipeline to WebAssembly using Emscripten, then runs bytecode in a TypeScript browser VM.
-
-```mermaid
-flowchart LR
-    A[Browser Editor] --> B[Durin Compiler Wasm]
-    B --> C[JSON Bytecode]
-    C --> D[TypeScript VM]
-    D --> E[Playable Web Adventure]
-```
-
-The web version intentionally does not port the terminal `runGameLoop()`. Instead, it keeps the existing C++ compiler as the source of truth and implements a browser-native VM for interactive play.
-
-## Documentation Page
-
-The web documentation page condenses the official digital documentation into a browser-friendly guide covering:
-
-- lexical structure
-- grammar
-- declarations
-- statements
-- semantic rules
-- compiler architecture
-- bytecode shape
-- VM runtime model
-- testing coverage
-
-![Durin's Code documentation page](Digital_Documentation/images/260618_23h04m55s_screenshot.png)
-
-## Compiler Playground Features
-
-The browser compiler page supports:
-
-- example picker
-- source editor
-- compile and play
-- compile-only mode
-- auto-compile after edits
-- include/exclude symbol table and TAC debug output
-- diagnostics panel
-- bytecode JSON viewer
-- debug/TAC viewer
-- world map view
-- copy source
-- download `.dc`
-- copy bytecode
-- download bytecode JSON
-- reset game
-- playable command input
-
-![Durin's Code compiler playground](Digital_Documentation/images/260618_23h05m14s_screenshot.png)
-
-## Examples
-
-The `examples/` directory contains:
-
-| File                 | Purpose                                                  |
-| -------------------- | -------------------------------------------------------- |
-| `01_hello_world.dc`  | Minimal valid adventure with two rooms and one action.   |
-| `02_inventory.dc`    | Demonstrates inventory add/remove and `player.has_item`. |
-| `03_multiroom.dc`    | Demonstrates a connected multi-room world graph.         |
-| `04_middle_earth.dc` | Full showcase adventure and recommended demo.            |
-| `05_error_demo.dc`   | Intentionally broken semantic-error demo.                |
-
-Recommended demo path for `04_middle_earth.dc`:
+Try the following commands in the game:
 
 ```text
 take ring
@@ -335,128 +185,89 @@ go east
 destroy ring
 ```
 
-## Build And Run
-
-### Requirements
-
-- CMake 3.23+
-- C++17 compiler
-- GoogleTest
-- Node.js and npm for the web app
-- Emscripten SDK for WebAssembly builds
-
-### Native Compiler
-
-```bash
-cmake -S . -B build
-cmake --build build
-```
-
-Run an example:
-
-```bash
-./build/durinsc examples/04_middle_earth.dc
-```
-
-Compile to bytecode:
-
-```bash
-./build/durinsc examples/02_inventory.dc -o inventory.json
-```
-
-Run bytecode:
-
-```bash
-./build/durinsc --run inventory.json
-```
-
-Debug compiler internals:
-
-```bash
-./build/durinsc examples/01_hello_world.dc --debug
-```
-
-### Web Playground
-
-If Emscripten is installed but not loaded:
-
-```bash
-source ~/emsdk/emsdk_env.sh
-```
-
-Install and run:
-
-```bash
-cd web
-npm install
-npm run build:wasm
-npm run dev
-```
-
-Open:
+## CLI Reference
 
 ```text
-http://localhost:5173/
+durinsc <source.dc>                 Compile and run a source file
+durinsc <source.dc> -o <out.json>   Compile source to JSON bytecode
+durinsc --run <bytecode.json>       Run precompiled bytecode
+durinsc <source.dc> --debug         Print the symbol table and optimized TAC
+durinsc --interactive               Start interactive compilation mode
 ```
 
-Production build:
+The VM provides `look`, `go <direction>`, `inventory`/`inv`, `help`, and `quit`. Any other input is resolved against the actions compiled from the source program.
 
-```bash
-cd web
-npm run build
-npm run preview
-```
+## Examples
+
+| Example | Demonstrates |
+| --- | --- |
+| [`01_hello_world.dc`](examples/01_hello_world.dc) | Minimal world and action. |
+| [`02_inventory.dc`](examples/02_inventory.dc) | Inventory mutation and `player.has_item`. |
+| [`03_multiroom.dc`](examples/03_multiroom.dc) | A connected multi-room world graph. |
+| [`04_middle_earth.dc`](examples/04_middle_earth.dc) | Full adventure with rooms, items, NPCs, conditions, and win state. |
+| [`05_error_demo.dc`](examples/05_error_demo.dc) | Intentional semantic errors and compiler diagnostics. |
 
 ## Testing
 
-The project has 49 documented tests across six suites.
+Configure and build the native project, then run:
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
-Test coverage summary:
+The suite currently contains **49 passing tests**:
 
-| Suite    | Tests | Covers                                                            |
-| -------- | ----: | ----------------------------------------------------------------- |
-| Lexer    |    12 | Keywords, punctuation, literals, comments, errors, line endings.  |
-| Parser   |    15 | Rooms, items, NPCs, exits, conditions, assignments, error cases.  |
-| Semantic |    10 | Symbol table, duplicate declarations, invalid references.         |
-| TAC      |     4 | Print, conditions, assignments, remove instruction generation.    |
-| Codegen  |     3 | Valid JSON, world serialisation, action instruction output.       |
-| VM       |     5 | Bytecode loading, action execution, branching, inventory changes. |
+| Suite | Tests | Coverage |
+| --- | ---: | --- |
+| Lexer | 12 | Tokens, literals, comments, locations, line endings, and lexical errors. |
+| Parser | 15 | Declarations, properties, actions, conditions, assignments, and recovery cases. |
+| Semantic | 10 | Symbol registration, duplicates, unresolved references, and error collection. |
+| TAC | 4 | Output, branching, assignment, and item-removal lowering. |
+| Code generation | 3 | Valid JSON, world serialization, and action instructions. |
+| VM | 5 | Bytecode loading, action dispatch, branching, and inventory state. |
 
-## Project Structure
+The full test inventory and expected results are documented in the [Test Suite Report](Digital_Documentation/Test_Suite.pdf).
+
+## Project Layout
 
 ```text
 DurinsCode/
 ├── src/
-│   ├── lexer/        # tokenization
-│   ├── parser/       # AST + recursive descent parser
-│   ├── semantic/     # symbol table + static checks
-│   ├── tac/          # TAC generation + optimiser
-│   ├── codegen/      # JSON bytecode generation
-│   ├── vm/           # native VM runtime
-│   └── main.cpp      # CLI entry point
-├── test/             # GoogleTest suites
-├── examples/         # sample .dc programs
-├── web/              # WebAssembly playground
+│   ├── lexer/          # Tokenization and source diagnostics
+│   ├── parser/         # AST and recursive-descent parser
+│   ├── semantic/       # Symbol table and static validation
+│   ├── tac/            # Intermediate code and optimization
+│   ├── codegen/        # JSON bytecode generation
+│   ├── vm/             # Native runtime
+│   └── main.cpp        # CLI entry point
+├── test/               # GoogleTest suites
+├── examples/           # Sample .dc adventures
+├── web/
+│   ├── src/            # TypeScript IDE and browser VM
+│   ├── wasm/           # C++/WebAssembly bindings
+│   └── scripts/        # Emscripten build tooling
 ├── Digital_Documentation/
 │   ├── Language_Reference_Manual.pdf
 │   ├── Compiler_Architecture_Document.pdf
 │   ├── Test_Suite.pdf
-│   ├── Team_Reflection.pdf
-│   └── images/       # screenshots used in this README
-└── third_party/
-    └── nlohmann/json.hpp
+│   └── Team_Reflection.pdf
+└── third_party/        # Vendored nlohmann/json header
 ```
 
-## Known Notes
+## Design Notes
 
-- Floating-point numbers are intentionally unsupported.
-- The language is intentionally small and focused on text-adventure structure.
-- `||` is lexed and parsed, but current showcased examples avoid relying on OR-heavy logic until TAC lowering is fully aligned.
-- Browser compilation uses WebAssembly for the compiler and TypeScript for the web VM.
+- Source files use integer, Boolean, and string literals; floating-point literals are intentionally rejected.
+- Semantic analysis uses two passes so exits and conditions can reference rooms or items declared later.
+- Browser compilation reuses the C++ compiler, while the browser runtime is implemented in TypeScript for DOM-friendly interaction.
+- Logical OR (`||`) is recognized by the lexer and parser, but its TAC lowering is not yet complete. Avoid OR-dependent action logic until that pass is implemented.
+
+## Documentation
+
+- [Language Reference Manual](Digital_Documentation/Language_Reference_Manual.pdf)
+- [Compiler Architecture Document](Digital_Documentation/Compiler_Architecture_Document.pdf)
+- [Test Suite Report](Digital_Documentation/Test_Suite.pdf)
+- [Team Reflection](Digital_Documentation/Team_Reflection.pdf)
+- [Web Playground Setup](web/README.md)
 
 ## Maintainers
 
@@ -464,21 +275,8 @@ DurinsCode/
 - Huzaifa Abdul Rehman
 - Muhammad Abdullah Khan
 
-## Why This Project Matters
+---
 
-Durin's Code demonstrates the full compiler construction story in a compact but complete system:
-
-- custom language design
-- hand-written lexer
-- recursive-descent parser
-- typed AST
-- two-pass semantic analysis
-- symbol table construction
-- intermediate representation
-- optimisation passes
-- JSON bytecode generation
-- native virtual machine
-- WebAssembly deployment
-- browser-based compiler playground
-
-It is small enough to understand end-to-end, but complete enough to show real compiler engineering.
+<div align="center">
+Built to make the full compiler pipeline visible, inspectable, and playable.
+</div>
